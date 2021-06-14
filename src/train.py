@@ -28,7 +28,8 @@ gs_model = GridSearchCV(
 gs_model.fit(ratings)
 
 # Train the SVD model with the parameters that minimise the root mean squared error
-print(f'Best SVD parameters: {gs_model.best_params}')
+print(f"Best SVD parameters: {gs_model.best_params}")
+print(f"Test RMSE = {gs_model.cv_results['mean_test_rmse'][0].round(3)}")
 best_SVD = gs_model.best_estimator['rmse']
 best_SVD.fit(trainset)
 
@@ -40,4 +41,4 @@ full_predictions = best_SVD.test(testset)
 # Save model and predictions
 print('Saving model ...')
 dump.dump(MODEL_PATH, algo=best_SVD, predictions=full_predictions)
-print(f'Model & predictions saved in {MODEL_PATH}')
+print(f"Model & predictions saved in {MODEL_PATH}")
