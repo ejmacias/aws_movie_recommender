@@ -1,4 +1,3 @@
-import pandas as pd
 from surprise import Dataset, Reader, SVD, dump
 from surprise.model_selection import GridSearchCV
 
@@ -22,7 +21,7 @@ param_grid = {
 gs_model = GridSearchCV(
     algo_class = SVD,
     param_grid = param_grid,
-    n_jobs = -1,
+    n_jobs = 1,
     joblib_verbose = 5)
 
 gs_model.fit(ratings)
