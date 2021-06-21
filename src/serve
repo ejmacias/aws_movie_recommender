@@ -1,45 +1,70 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python
 
-import pandas as pd
-from collections import defaultdict
-from surprise import dump
+# This file implements the scoring service shell. You don't necessarily need to modify it for various
+# algorithms. It starts nginx and gunicorn with the correct configurations and then simply waits until
+# gunicorn exits.
+#
+# The flask server is specified to be the app object in wsgi.py
+#
+# We set the following parameters:
+#
+# Parameter                Environment Variable              Default Value
+# ---------                --------------------              -------------
+# number of workers        MODEL_SERVER_WORKERS              the number of CPU cores
+# timeout                  MODEL_SERVER_TIMEOUT              60 seconds
 
-# TO BE REMOVED =====================
-USER_ID = '2'
-# ===================================
+import multiprocessing
+import os
+import signal
+import subprocess
+import sys
 
-# Paths
-MOVIES_PATH = './data/movies.csv'
-MODEL_PATH = './model/Recommender_Model'
+cpu_count = multiprocessing.cpu_count()
+
+model_server_timeout = os.environ.get('MODEL_SERVER_TIMEOUT', 60)
+model_server_workers = int(os.environ.get('MODEL_SERVER_WORKERS', cpu_count))
+
+def sigterm_handler(nginx_pid, gunicorn_pid):
+    try:
+        os.kill(nginx_pid, signal.SIGQUIT)
+    except OSError:
+        pass
+    try:
+        os.kill(gunicorn_pid, signal.SIGTERM)
+    except OSError:
+        pass
+
+    sys.exit(0)
+
+def start_server():
+    print('Starting the inference server with {} workers.'.format(model_server_workers))
 
 
-# Dictionary with movie Ids and titles
-movies = pd.read_csv(MOVIES_PATH, usecols=[0,1], index_col=0, squeeze=True).to_dict()
+    # link the log streams to stdout/err so they will be logged to the container logs
+    subprocess.check_call(['ln', '-sf', '/dev/stdout', '/var/log/nginx/access.log'])
+    subprocess.check_call(['ln', '-sf', '/dev/stderr', '/var/log/nginx/error.log'])
 
-# Function that returns the top-n recommended movies given a list of predictions
-def get_top_n(predictions, n=10):
-    # First map the predictions to each user.
-    top_n = defaultdict(list)
-    for uid, iid, true_r, est, _ in predictions:
-        top_n[uid].append((movies[int(iid)], est))
+    nginx = subprocess.Popen(['nginx', '-c', '/opt/program/nginx.conf'])
+    gunicorn = subprocess.Popen(['gunicorn',
+                                 '--timeout', str(model_server_timeout),
+                                 '-k', 'sync',
+                                 '-b', 'unix:/tmp/gunicorn.sock',
+                                 '-w', str(model_server_workers),
+                                 'wsgi:app'])
 
-    # Then sort the predictions for each user and retrieve the k highest ones.
-    for uid, user_ratings in top_n.items():
-        user_ratings.sort(key=lambda x: x[1], reverse=True)
-        top_n[uid] = user_ratings[:n]
+    signal.signal(signal.SIGTERM, lambda a, b: sigterm_handler(nginx.pid, gunicorn.pid))
 
-    return top_n
+    # If either subprocess exits, so do we.
+    pids = set([nginx.pid, gunicorn.pid])
+    while True:
+        pid, _ = os.wait()
+        if pid in pids:
+            break
 
+    sigterm_handler(nginx.pid, gunicorn.pid)
+    print('Inference server exiting')
 
-# Load recommender system model and predictions
-print('Loading model ...')
-full_predictions, recommender_model = dump.load(MODEL_PATH)
+# The main routine just invokes the start function.
 
-# Filter predictions for the given user
-user_predictions = [prediction for prediction in full_predictions if prediction.uid == USER_ID]
-
-# Get top recommended movies
-top_ratings = get_top_n(user_predictions, n=10)
-recommended_movies = [movie[0] for movie in top_ratings[USER_ID]]
-
-print(f'Top recommendations: {recommended_movies}')
+if __name__ == '__main__':
+    start_server()

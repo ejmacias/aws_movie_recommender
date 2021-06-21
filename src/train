@@ -8,9 +8,7 @@ from surprise.model_selection import GridSearchCV
 
 # Paths where SageMaker mounts data in our container
 prefix = '/opt/ml/'
-#prefix = ''
 input_path = prefix + 'input/data'
-#input_path = prefix + 'data'
 output_path = os.path.join(prefix, 'output')
 model_path = os.path.join(prefix, 'model', 'recommender_system')
 
@@ -18,7 +16,6 @@ model_path = os.path.join(prefix, 'model', 'recommender_system')
 # When input method is file mode, the input files are copied to the directory
 # specified here.
 channel_name_train = 'train'
-#channel_name_train = 'ratings.csv'
 training_path = os.path.join(input_path, channel_name_train)
 """ channel_name_test = 'test'
 test_path = os.path.join(input_path, channel_name_test)
