@@ -1,29 +1,49 @@
-# Sets the base image 
-FROM continuumio/miniconda3
+# Build an image that can do training and inference in SageMaker
+# This is a Python 3 image that uses the nginx, gunicorn, flask stack
+# for serving inferences in a stable way.
 
-# set the working directory for containers
-WORKDIR /usr/src/movielens
+FROM ubuntu:18.04
 
-# Copy the source files to the working directory
-COPY requirements.txt .
-COPY data/ ./data
-COPY model/ ./model
-COPY src/ ./src
+MAINTAINER Amazon AI <sage-learner@amazon.com>
 
-# list workdir
-RUN ls -laR .
+RUN apt-get -y update && apt-get install -y --no-install-recommends \
+         wget \
+         python3-pip \
+         python3-setuptools \
+         nginx \
+         ca-certificates \
+         gcc \
+         libpq-dev \
+         python3-dev \
+         python3-venv \
+         python3-wheel \
+    && rm -rf /var/lib/apt/lists/*
 
-# install build utilities
-RUN apt-get -y update
-RUN conda config --append channels conda-forge
-RUN conda install --file requirements.txt
+RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN ln -s /usr/bin/pip3 /usr/bin/pip
 
-# check our python environment
-RUN python --version
-RUN conda --version
+# surprise won't install without numpy preinstalled
+RUN pip3 install wheel
 
-#Expose the required port
-EXPOSE 5000
+# Here we get all python packages.
+# There's substantial overlap between scipy and numpy that we eliminate by
+# linking them together. Likewise, pip leaves the install caches populated which uses
+# a significant amount of space. These optimizations save a fair amount of space in the
+# image, which reduces start up time.
+RUN pip --no-cache-dir install numpy==1.16.2 pandas flask gunicorn
 
-# Command to run on container start
-CMD [ "python", "-u", "./src/train.py" ]
+# surprise won't install without numpy preinstalled
+RUN pip install scikit-surprise
+
+# Set some environment variables. PYTHONUNBUFFERED keeps Python from buffering our standard
+# output stream, which means that logs can be delivered to the user quickly. PYTHONDONTWRITEBYTECODE
+# keeps Python from writing the .pyc files which are unnecessary in this case. We also update
+# PATH so that the train and serve programs are found when the container is invoked.
+
+ENV PYTHONUNBUFFERED=TRUE
+ENV PYTHONDONTWRITEBYTECODE=TRUE
+ENV PATH="/opt/program:${PATH}"
+
+# Set up the program in the image
+COPY src /opt/program
+WORKDIR /opt/program
