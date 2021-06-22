@@ -85,7 +85,7 @@ class ScoringService(object):
 app = flask.Flask(__name__)
 
 
-@app.route("/recommend/<user_id>', methods=["GET"])
+@app.route('/recommend/<user_id>', methods=['GET'])
 def recommend(user_id):
     """Determine if the user is known and if so, get the predictions."""
     status = 200 if user_id in range(1, max_user_id + 1) else 404
