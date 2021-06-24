@@ -22,14 +22,7 @@ test_path = os.path.join(input_path, channel_name_test)
 test_flag = False
  """
 
-# Only 1 file (ratings.csv) is expected as input data.
-input_files = [os.path.join(training_path, file) for file in os.listdir(training_path)]
-if len(input_files) != 1:
-            raise ValueError(('Only 1 file (ratings.csv) is expected in {}.\n' +
-                              'This usually indicates that the channel ({}) was incorrectly specified,\n' +
-                              'the data specification in S3 was incorrectly specified or the role specified\n' +
-                              'does not have permission to access the data.').format(training_path, channel_name_train))
-ratings_path = input_files[0]
+ratings_path = os.path.join(training_path, 'ratings.csv')
 
 def train():
     print('Training job started')
@@ -60,14 +53,14 @@ def train():
         best_SVD = gs_model.best_estimator['rmse']
         best_SVD.fit(trainset)
 
-        # Predict ratings for all pairs (u, i) that are NOT in the training set.
-        print('Making predictions ...')
-        testset = trainset.build_anti_testset()
-        full_predictions = best_SVD.test(testset)
+# Predict ratings for all pairs (u, i) that are NOT in the training set.
+#print('Making predictions ...')
+#testset = trainset.build_anti_testset()
+#full_predictions = best_SVD.test(testset)
 
-        # Save model and predictions
+        # Save model
         print(f"Saving model in {model_path} ...")
-        dump.dump(model_path, algo=best_SVD, predictions=full_predictions)
+        dump.dump(model_path, algo=best_SVD, predictions=None)
         print("Training complete.")
 
     except Exception as e:
