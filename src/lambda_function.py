@@ -1,3 +1,8 @@
+'''
+This code should be copied into a Lambda function of AWS.
+Make sure to create an 'ENDPOINT_NAME' variable to points to your SageMaker Endpoint.
+'''
+
 import os
 import boto3
 import json
@@ -8,7 +13,7 @@ ENDPOINT_NAME = os.environ['ENDPOINT_NAME']
 
 runtime = boto3.client('runtime.sagemaker')
 s3_client = boto3.client('s3')
-bucket = 'emacias-movielens'
+bucket = <YOUR_BUCKET_NAME>
 movies_filename = 'movies.csv'
 
 def lambda_handler(event, context):

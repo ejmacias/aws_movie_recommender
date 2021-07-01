@@ -1,6 +1,5 @@
 import os
 from flask import Flask, Response, request
-import pandas as pd
 from collections import defaultdict
 from surprise import dump
 
