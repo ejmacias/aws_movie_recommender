@@ -34,10 +34,10 @@ def train():
 
         # Find the best hyperparameters for an SVD model via grid search cross-validation
         param_grid = {
-            'n_factors': [5], #[10, 100, 500],
-            'n_epochs': [5], #[5, 20, 50], 
-            'lr_all': [0.005], #[0.001, 0.005, 0.02],
-            'reg_all': [0.02]} #[0.005, 0.02, 0.1]}
+            'n_factors': [10, 100, 500],
+            'n_epochs': [5, 20, 50], 
+            'lr_all': [0.001, 0.005, 0.02],
+            'reg_all': [0.005, 0.02, 0.1]}
 
         gs_model = GridSearchCV(
             algo_class = SVD,
@@ -52,11 +52,6 @@ def train():
         print(f"Test RMSE = {gs_model.cv_results['mean_test_rmse'][0].round(3)}")
         best_SVD = gs_model.best_estimator['rmse']
         best_SVD.fit(trainset)
-
-# Predict ratings for all pairs (u, i) that are NOT in the training set.
-#print('Making predictions ...')
-#testset = trainset.build_anti_testset()
-#full_predictions = best_SVD.test(testset)
 
         # Save model
         print(f"Saving model in {model_path} ...")
