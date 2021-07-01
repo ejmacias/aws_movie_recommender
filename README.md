@@ -14,4 +14,4 @@ This project covers the end-to-end process of training and deploying a recommend
 - __Dockerfile__: Text file which contains the set of commands for building the Docker image.
 
 
-__Article here:__ https://ejmacias.medium.com/movie-recommendations-on-the-cloud-e63eea7973c7
+__Article here:__ [Medium: Movie recommendations on the cloud](https://ejmacias.medium.com/movie-recommendations-on-the-cloud-e63eea7973c7)
