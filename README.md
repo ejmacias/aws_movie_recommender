@@ -1,11 +1,11 @@
 # Deploying a recommender system on the cloud
-### How to train and deploy a recommender system on AWS with custom containers
+### _How to train and deploy a recommender system on AWS with custom containers_
 
 <img src="img/pipeline.png" width="600" height="450">
 
 This project covers the end-to-end process of training and deploying a recommender system on AWS, following a typical use case such as predicting movie ratings from users.
 
-### File structure
+### File structure
 - __/data__: Input datasets with users, movies and ratings information.
 - __/img__: Images for the project.
 - __/model__: Directory where the recommender model is saved after training.
